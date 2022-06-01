@@ -1,6 +1,3 @@
-
-from user.models import UserManager, UserMessages
-from .models import Message
 from django.utils.translation import gettext as _
 from django.http.response import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -66,14 +63,20 @@ def delete_a_message(request, pk=None):
     """delete user's oldest message from DB."""
     received_token = utils.confirm_token_exists_in_request(request)
     validated_user_token = utils.validate_user_credentials(received_token, pk)
-
+    user = utils.get_user_name_by_id_from_db(pk)
     if validated_user_token:
         messages = utils.get_first_message_between_users(pk)
 
-        if messages:
-            messages[0].delete()
-            return JsonResponse('Message earased successfully', safe=False, status=200)
-        return JsonResponse('User doesn`t have any messages', safe=False, status=400)
+        if not list(messages):
+            return JsonResponse('User doesn`t have any messages', safe=False, status=400)
+
+        messege_to_delete_id = messages[0].message_id
+        message_from_db = utils.delete_message_from_database(
+            messege_to_delete_id)
+        messages[0].delete()
+        _msg = ' Message #{message_from_db} earased successfully for {user}'.format(
+            message_from_db=message_from_db, user=user)
+    return JsonResponse(_msg, safe=False, status=200)
 
 
 @ csrf_exempt

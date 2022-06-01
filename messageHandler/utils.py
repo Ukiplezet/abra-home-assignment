@@ -139,3 +139,25 @@ def get_first_message_between_users(pk=None):
     last_message = UserMessages.objects.filter(
         user_id=pk)
     return last_message
+
+
+def delete_message_from_database(message_id):
+
+    message_sender_id = Message.objects.filter(
+        id=message_id
+    ).values_list('sender_id', flat=True)[0]
+    message_receiver_id = Message.objects.filter(
+        id=message_id
+    ).values_list('receiver_id', flat=True)[0]
+    message_to_delete = UserMessages.objects.filter(
+        (Q(user_id=message_receiver_id) | Q(user_id=message_sender_id)) &
+        Q(message_id=message_id)
+    ).values()
+
+    if message_to_delete:
+        if len(message_to_delete) == 1:
+            message_to_delete = Message.objects.filter(
+                id=message_id
+            ).delete()
+        return message_id
+    return
